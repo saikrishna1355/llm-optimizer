@@ -1,0 +1,11 @@
+{
+  "name": "@llm-optimizer/gemini",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "scripts": { "build": "tsup src/index.ts --format esm --dts --clean", "clean": "rm -rf dist", "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@llm-optimizer/core": "^0.1.0" },
+  "devDependencies": { "tsup": "^8.3.5", "typescript": "^5.6.3" }
+}
