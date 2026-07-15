@@ -1,8 +1,15 @@
 {
   "name": "@llm-optimize/plugin-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "llm",
+    "plugin",
+    "sdk",
+    "middleware",
+    "optimizer"
+  ],
   "files": [
     "dist",
     "README.md"
@@ -21,7 +28,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@llm-optimize/core": "^0.1.0"
+    "@llm-optimize/core": "^0.1.1"
   },
   "publishConfig": {
     "access": "public"

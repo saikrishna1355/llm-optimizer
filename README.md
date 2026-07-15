@@ -55,7 +55,21 @@ npm run test
 npm run typecheck
 ```
 
-## Basic usage
+## Package Guide
+
+Use the sections below to pick the right package for your app.
+
+### `@llm-optimize/core`
+
+Use this when you want the optimization middleware and the main `LLMOptimizer` API.
+
+Install:
+
+```bash
+npm install @llm-optimize/core
+```
+
+Example:
 
 ```ts
 import { LLMOptimizer } from "@llm-optimize/core";
@@ -64,46 +78,187 @@ const ai = new LLMOptimizer({
   provider: "openai",
   optimize: true,
   providerClientFactory: {
-    create: async ({ apiKey }) => {
-      return {
-        chat: async (request) => {
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model: request.model,
-              messages: request.messages,
-              temperature: request.temperature,
-            }),
-          });
-
-          const data = await response.json();
-          return {
-            model: data.model ?? request.model,
-            content: data.choices?.[0]?.message?.content ?? "",
-            raw: data,
-          };
-        },
-      };
-    },
+    create: async () => ({
+      chat: async (request) => {
+        return {
+          model: request.model,
+          content: "Hello from core",
+        };
+      },
+    }),
   },
 });
 
 const response = await ai.chat({
   model: "gpt-5",
-  messages: [
-    { role: "system", content: "You are a concise assistant." },
-    { role: "user", content: "Explain this project." },
-  ],
+  messages: [{ role: "user", content: "Summarize this repo." }],
 });
-
-console.log(response.content);
 ```
 
-## Request lifecycle
+### `@llm-optimize/openai`
+
+Use this when you want an OpenAI provider adapter.
+
+Install:
+
+```bash
+npm install @llm-optimize/openai
+```
+
+Example:
+
+```ts
+import { createOpenAIProviderClient } from "@llm-optimize/openai";
+
+const client = createOpenAIProviderClient({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+```
+
+### `@llm-optimize/anthropic`
+
+Use this when you want an Anthropic provider adapter.
+
+Install:
+
+```bash
+npm install @llm-optimize/anthropic
+```
+
+Example:
+
+```ts
+import { createAnthropicProviderClient } from "@llm-optimize/anthropic";
+
+const client = createAnthropicProviderClient({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+```
+
+### `@llm-optimize/gemini`
+
+Use this when you want a Gemini provider adapter.
+
+Install:
+
+```bash
+npm install @llm-optimize/gemini
+```
+
+Example:
+
+```ts
+import { createGeminiProviderClient } from "@llm-optimize/gemini";
+
+const client = createGeminiProviderClient({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+```
+
+### `@llm-optimize/ollama`
+
+Use this when you want to connect to a local Ollama server.
+
+Install:
+
+```bash
+npm install @llm-optimize/ollama
+```
+
+Example:
+
+```ts
+import { createOllamaProviderClient } from "@llm-optimize/ollama";
+
+const client = createOllamaProviderClient({
+  baseUrl: "http://localhost:11434",
+});
+```
+
+### `@llm-optimize/cache-memory`
+
+Use this for in-process caching during development or for single-instance deployments.
+
+Install:
+
+```bash
+npm install @llm-optimize/cache-memory
+```
+
+Example:
+
+```ts
+import { MemoryCache } from "@llm-optimize/cache-memory";
+
+const cache = new MemoryCache();
+```
+
+### `@llm-optimize/cache-redis`
+
+Use this when you need shared caching across multiple app instances.
+
+Install:
+
+```bash
+npm install @llm-optimize/cache-redis
+```
+
+Example:
+
+```ts
+import { RedisCache } from "@llm-optimize/cache-redis";
+
+const cache = new RedisCache(redisClient);
+```
+
+### `@llm-optimize/cli`
+
+Use this for prompt analysis, linting, and benchmark commands.
+
+Install:
+
+```bash
+npm install @llm-optimize/cli
+```
+
+Examples:
+
+```bash
+npx llm-opt analyze prompt.md
+npx llm-opt lint prompts/
+npx llm-opt benchmark
+```
+
+### `@llm-optimize/plugin-sdk`
+
+Use this when you want to build custom plugins against the optimizer runtime.
+
+Install:
+
+```bash
+npm install @llm-optimize/plugin-sdk
+```
+
+Example:
+
+```ts
+import type { OptimizerPlugin } from "@llm-optimize/plugin-sdk";
+
+export const myPlugin: OptimizerPlugin = {
+  name: "my-plugin",
+  init(runtime) {
+    runtime.registerMiddleware(async (context, next) => {
+      await next();
+    });
+  },
+};
+```
+
+### `packages/examples`
+
+Use this folder as a quick reference for a minimal working example.
+
+## Request Lifecycle
 
 The intended pipeline is:
 
@@ -189,45 +344,19 @@ The intended pipeline is:
 
 ## CLI
 
-### Analyze a prompt
+See the `@llm-optimize/cli` package guide above for usage examples.
 
-```bash
-npx llm-opt analyze prompt.md
-```
+## Integrating In An App
 
-Outputs:
+The most common setup is:
 
-- prompt quality score
-- token count
-- duplicate instructions
-- optimization suggestions
-- estimated savings
+1. install `@llm-optimize/core`
+2. install exactly one provider adapter, such as `@llm-optimize/openai`
+3. optionally install a cache package
+4. create `LLMOptimizer`
+5. call `chat()` instead of calling the provider directly
 
-### Lint a folder of prompts
-
-```bash
-npx llm-opt lint prompts/
-```
-
-Outputs:
-
-- warnings
-- errors
-- suggestions
-- prompt quality score
-
-### Benchmark
-
-```bash
-npx llm-opt benchmark
-```
-
-Outputs:
-
-- before optimization
-- after optimization
-- compression ratio
-- estimated monthly savings
+If you want caching, routing, or plugins, add those packages or options as needed.
 
 ## GitHub Actions
 
@@ -275,7 +404,7 @@ The repo is scaffolded and typechecks/tests pass, but some parts are still inten
 
 Add your project license here before publishing publicly.
 
-## npm publishing status
+## npm Publishing Status
 
 The packages are prepared for npm publishing with:
 
@@ -292,7 +421,7 @@ Example flow:
 
 ```bash
 npm run build
-npm publish packages/core --access public
+npm publish --workspace @llm-optimize/core --access public
 ```
 
 For a full automated release pipeline across all workspaces, the repo still needs a package-aware release tool such as Changesets or a custom publish script per package. I have not hard-wired that yet because multi-package release automation should match your publishing strategy.
