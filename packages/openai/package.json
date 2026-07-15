@@ -1,7 +1,12 @@
 {
   "name": "@llm-optimizer/openai",
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -19,6 +24,9 @@
   },
   "dependencies": {
     "@llm-optimizer/core": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

@@ -1,7 +1,12 @@
 {
   "name": "@llm-optimizer/cli",
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
     "llm-opt": "./dist/index.js"
   },
@@ -12,6 +17,9 @@
   },
   "dependencies": {
     "@llm-optimizer/core": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
