@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
     "lib": ["ES2022"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -15,6 +16,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@llm-optimize/core": ["packages/core/src/index.ts"]
+    }
   }
 }
