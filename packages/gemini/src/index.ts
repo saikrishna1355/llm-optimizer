@@ -1,4 +1,4 @@
-import type { ProviderChatRequest, ProviderChatResponse } from "@llm-optimizer/core";
+import type { ProviderChatRequest, ProviderChatResponse } from "@llm-optimize/core";
 
 export interface GeminiClient {
   generateContent(request: ProviderChatRequest): Promise<ProviderChatResponse>;

@@ -1,4 +1,4 @@
-import { LLMOptimizer } from "@llm-optimizer/core";
+import { LLMOptimizer } from "@llm-optimize/core";
 
 const ai = new LLMOptimizer({ provider: "openai", optimize: true });
 

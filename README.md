@@ -1,6 +1,6 @@
-# llm-optimizer
+# llm-optimize
 
-`llm-optimizer` is a TypeScript monorepo for building an LLM optimization layer between your app and any model provider.
+`llm-optimize` is a TypeScript monorepo for building an LLM optimization layer between your app and any model provider.
 
 The goal is to reduce token usage, latency, and cost while improving prompt quality with minimal code changes.
 
@@ -58,7 +58,7 @@ npm run typecheck
 ## Basic usage
 
 ```ts
-import { LLMOptimizer } from "@llm-optimizer/core";
+import { LLMOptimizer } from "@llm-optimize/core";
 
 const ai = new LLMOptimizer({
   provider: "openai",
@@ -279,7 +279,7 @@ Add your project license here before publishing publicly.
 
 The packages are prepared for npm publishing with:
 
-- package names like `@llm-optimizer/core`
+- package names like `@llm-optimize/core`
 - `dist/` build output
 - `exports`, `main`, and `types`
 - `files` lists for published artifacts

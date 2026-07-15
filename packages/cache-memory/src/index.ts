@@ -1,4 +1,4 @@
-import type { CacheAdapter } from "@llm-optimizer/core";
+import type { CacheAdapter } from "@llm-optimize/core";
 
 export class MemoryCache implements CacheAdapter {
   private readonly store = new Map<string, { value: unknown; expiresAt?: number }>();

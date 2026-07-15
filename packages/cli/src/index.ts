@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
-import { estimateRequestTokens } from "@llm-optimizer/core";
+import { estimateRequestTokens } from "@llm-optimize/core";
 
 const [command, target] = process.argv.slice(2);
 

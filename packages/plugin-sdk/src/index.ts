@@ -6,6 +6,6 @@ export type {
   ModelRouter,
   AnalyticsSink,
   AnalyticsRecord,
-} from "@llm-optimizer/core";
+} from "@llm-optimize/core";
 
-export { PluginRegistry, activatePlugins } from "@llm-optimizer/core";
+export { PluginRegistry, activatePlugins } from "@llm-optimize/core";

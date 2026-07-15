@@ -1,4 +1,4 @@
-import type { ProviderChatRequest, ProviderChatResponse } from "@llm-optimizer/core";
+import type { ProviderChatRequest, ProviderChatResponse } from "@llm-optimize/core";
 
 export interface OpenAIClient {
   chatCompletions(request: ProviderChatRequest): Promise<ProviderChatResponse>;

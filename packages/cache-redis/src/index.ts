@@ -1,4 +1,4 @@
-import type { CacheAdapter } from "@llm-optimizer/core";
+import type { CacheAdapter } from "@llm-optimize/core";
 
 export interface RedisLikeClient {
   get(key: string): Promise<string | null>;

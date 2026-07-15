@@ -1,5 +1,5 @@
 {
-  "name": "@llm-optimizer/anthropic",
+  "name": "@llm-optimize/anthropic",
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
@@ -22,7 +22,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@llm-optimizer/core": "^0.1.0"
+    "@llm-optimize/core": "^0.1.0"
   },
   "publishConfig": {
     "access": "public"

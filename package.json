@@ -12,7 +12,7 @@
     "build": "turbo run build",
     "clean": "turbo run clean",
     "lint": "turbo run lint",
-    "publish:all": "npm publish --workspace @llm-optimizer/core --access public && npm publish --workspace @llm-optimizer/openai --access public && npm publish --workspace @llm-optimizer/anthropic --access public && npm publish --workspace @llm-optimizer/gemini --access public && npm publish --workspace @llm-optimizer/ollama --access public && npm publish --workspace @llm-optimizer/cache-memory --access public && npm publish --workspace @llm-optimizer/cache-redis --access public && npm publish --workspace @llm-optimizer/plugin-sdk --access public && npm publish --workspace @llm-optimizer/cli --access public",
+    "publish:all": "npm publish --workspace @llm-optimize/core --access public && npm publish --workspace @llm-optimize/openai --access public && npm publish --workspace @llm-optimize/anthropic --access public && npm publish --workspace @llm-optimize/gemini --access public && npm publish --workspace @llm-optimize/ollama --access public && npm publish --workspace @llm-optimize/cache-memory --access public && npm publish --workspace @llm-optimize/cache-redis --access public && npm publish --workspace @llm-optimize/plugin-sdk --access public && npm publish --workspace @llm-optimize/cli --access public",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },
