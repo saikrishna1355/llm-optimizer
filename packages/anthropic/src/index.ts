@@ -29,7 +29,10 @@ export function createAnthropicProviderClient(options: AnthropicProviderOptions)
         },
         body: JSON.stringify({
           model: request.model,
-          messages: request.messages.map((message) => ({ role: message.role, content: message.content })),
+          messages: request.messages
+            .filter((m) => m.role !== "system")
+            .map((message) => ({ role: message.role, content: message.content })),
+          system: request.messages.find((m) => m.role === "system")?.content,
           max_tokens: request.maxTokens ?? 1024,
           temperature: request.temperature,
         }),
@@ -39,10 +42,18 @@ export function createAnthropicProviderClient(options: AnthropicProviderOptions)
       }
       const data = (await response.json()) as any;
       const content = Array.isArray(data.content) ? data.content.map((part: any) => part.text ?? "").join("") : "";
+      // Fix #14: populate usage from Anthropic's actual response
+      const inputTokens: number = data.usage?.input_tokens ?? 0;
+      const outputTokens: number = data.usage?.output_tokens ?? 0;
       return {
         model: data.model ?? request.model,
         content,
         raw: data,
+        usage: {
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        },
       };
     },
   };

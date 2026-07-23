@@ -6,8 +6,8 @@ import { createContextOptimizer, createPromptOptimizer, createResponseValidator 
 import type {
   AnalyticsRecord,
   AnalyticsSink,
+  AnalyticsSnapshot,
   CacheAdapter,
-  ChatMessage,
   LLMOptimizerOptions,
   ModelRouteContext,
   ModelRouter,
@@ -24,7 +24,7 @@ class DefaultAnalytics implements AnalyticsSink {
     this.records.push(event);
   }
 
-  snapshot() {
+  snapshot(): AnalyticsSnapshot {
     const total = this.records.length;
     const aggregate = this.records.reduce(
       (acc, record) => {
@@ -55,7 +55,7 @@ class DefaultAnalytics implements AnalyticsSink {
 
 export class LLMOptimizer {
   private readonly registry = new PluginRegistry();
-  private readonly analytics = new DefaultAnalytics();
+  private readonly _analytics = new DefaultAnalytics();
   private readonly provider: ProviderClient | undefined;
   private readonly options: LLMOptimizerOptions;
   private readonly optimize: boolean;
@@ -80,8 +80,13 @@ export class LLMOptimizer {
       timeoutMs: options.retry?.timeoutMs ?? 30000,
     };
 
-    this.registry.registerAnalytics(this.analytics);
-    void activatePlugins(options.plugins ?? [], this.registry).catch(() => undefined);
+    this.registry.registerAnalytics(this._analytics);
+
+    // Fix #3: log plugin errors instead of silently swallowing them
+    void activatePlugins(options.plugins ?? [], this.registry).catch((err) => {
+      console.error("[llm-optimize] plugin init error:", err);
+    });
+
     this.pipeline = new MiddlewarePipeline([
       createContextOptimizer(options.tokenBudget ?? 6000),
       createPromptOptimizer(),
@@ -89,16 +94,24 @@ export class LLMOptimizer {
     ]);
   }
 
+  // Fix #5: expose analytics snapshot publicly
+  get analytics(): AnalyticsSnapshot {
+    return this._analytics.snapshot();
+  }
+
   async chat(request: ProviderChatRequest): Promise<ProviderChatResponse> {
     const start = performance.now();
     const normalizedRequest = this.redact ? this.redactRequest(request) : request;
     const inputTokens = estimateRequestTokens(normalizedRequest);
     const route = this.route(normalizedRequest, inputTokens);
-    const cacheKey = this.buildCacheKey(normalizedRequest, route);
+
+    // Fix #4: build cache key before redaction so identical requests always hit cache
+    const cacheKey = this.buildCacheKey(request, route);
     const context: OptimizerMiddlewareContext = { request: normalizedRequest, route, cacheKey };
+
     const cached = this.cache ? await this.cache.get<ProviderChatResponse>(cacheKey) : undefined;
     if (cached) {
-      this.analytics.record({
+      this._analytics.record({
         timestamp: Date.now(),
         provider: "cached",
         model: cached.model,
@@ -113,14 +126,19 @@ export class LLMOptimizer {
       return cached;
     }
 
-    const optimized = this.optimize ? this.optimizeRequest(normalizedRequest) : { messages: normalizedRequest.messages, tokenSavings: 0, compressionRatio: 1, notes: [] };
-    context.optimized = optimized;
-    await this.pipeline.execute(context);
-    const response = await this.callProvider({ ...normalizedRequest, model: route, messages: optimized.messages });
+    // Fix #1: removed optimizeRequest() — deduplication now only happens once inside the pipeline
+    if (this.optimize) {
+      await this.pipeline.execute(context);
+    }
+
+    const messages = context.optimized?.messages ?? normalizedRequest.messages;
+    const response = await this.callProvider({ ...normalizedRequest, model: route, messages });
     context.response = response;
+
     if (this.cache) {
       await this.cache.set(cacheKey, response, 5 * 60 * 1000);
     }
+
     const durationMs = performance.now() - start;
     const responseTokens = response.usage?.outputTokens ?? estimateTextTokens(response.content);
     const record: AnalyticsRecord = {
@@ -129,26 +147,32 @@ export class LLMOptimizer {
       model: route,
       requestTokens: inputTokens,
       responseTokens,
-      estimatedCostUsd: estimateCostUsd(inputTokens, responseTokens),
+      // Fix #11: pass model name so correct cost rates are used
+      estimatedCostUsd: estimateCostUsd(inputTokens, responseTokens, route),
       cacheHit: false,
       durationMs,
-      compressionRatio: optimized.compressionRatio,
-      tokenSavings: optimized.tokenSavings,
+      compressionRatio: context.optimized?.compressionRatio ?? 1,
+      tokenSavings: context.optimized?.tokenSavings ?? 0,
     };
-    this.analytics.record(record);
+    this._analytics.record(record);
     return response;
   }
 
   private async callProvider(request: ProviderChatRequest): Promise<ProviderChatResponse> {
     const client = await this.resolveProviderClient();
-    const attempt = async (): Promise<ProviderChatResponse> => client.chat(request);
+    // Fix #2: apply timeoutMs to each attempt
+    const attempt = (): Promise<ProviderChatResponse> =>
+      Promise.race([
+        client.chat(request),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Provider timeout after ${this.retry.timeoutMs}ms`)), this.retry.timeoutMs),
+        ),
+      ]);
     return this.withRetry(attempt);
   }
 
   private async resolveProviderClient(): Promise<ProviderClient> {
-    if (this.provider) {
-      return this.provider;
-    }
+    if (this.provider) return this.provider;
     if (!this.providerClientPromise) {
       this.providerClientPromise = this.createProviderClient();
     }
@@ -163,7 +187,6 @@ export class LLMOptimizer {
         baseUrl: this.options.baseUrl,
       });
     }
-
     throw new Error(
       `No provider client configured for "${this.options.provider}". Pass providerClient or providerClientFactory.`,
     );
@@ -182,18 +205,6 @@ export class LLMOptimizer {
       }
     }
     throw lastError instanceof Error ? lastError : new Error("Provider request failed");
-  }
-
-  private optimizeRequest(request: ProviderChatRequest) {
-    const deduped = dedupeMessages(request.messages);
-    const originalTokens = estimateRequestTokens(request);
-    const optimizedTokens = estimateRequestTokens({ ...request, messages: deduped });
-    return {
-      messages: deduped,
-      tokenSavings: Math.max(0, originalTokens - optimizedTokens),
-      compressionRatio: originalTokens ? optimizedTokens / originalTokens : 1,
-      notes: deduped.length !== request.messages.length ? ["Removed duplicate messages"] : [],
-    };
   }
 
   private redactRequest(request: ProviderChatRequest): ProviderChatRequest {
@@ -219,16 +230,4 @@ export class LLMOptimizer {
       responseFormat: request.responseFormat,
     });
   }
-}
-
-function dedupeMessages(messages: ChatMessage[]): ChatMessage[] {
-  const seen = new Set<string>();
-  const result: ChatMessage[] = [];
-  for (const message of messages) {
-    const key = `${message.role}:${message.content.trim()}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push({ ...message, content: message.content.trim().replace(/\s+/g, " ") });
-  }
-  return result;
 }

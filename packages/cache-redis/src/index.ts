@@ -11,7 +11,15 @@ export class RedisCache implements CacheAdapter {
 
   async get<T>(key: string): Promise<T | undefined> {
     const value = await this.client.get(this.prefix(key));
-    return value ? (JSON.parse(value) as T) : undefined;
+    if (!value) return undefined;
+    // Fix #21: handle corrupted or unexpected Redis values gracefully
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      console.warn(`[llm-optimize] cache: failed to parse value for key "${key}", evicting`);
+      await this.client.del(this.prefix(key));
+      return undefined;
+    }
   }
 
   async set<T>(key: string, value: T, ttlMs?: number): Promise<void> {

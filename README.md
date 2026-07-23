@@ -1,75 +1,31 @@
 # llm-optimize
 
-`llm-optimize` is a TypeScript monorepo for building an LLM optimization layer between your app and any model provider.
+> TypeScript middleware layer for LLM apps — reduce token usage, cut costs, protect sensitive data, and cache responses across OpenAI, Anthropic, Gemini, Ollama, and AWS Bedrock.
 
-The goal is to reduce token usage, latency, and cost while improving prompt quality with minimal code changes.
+[![npm](https://img.shields.io/npm/v/@llm-optimize/core)](https://www.npmjs.com/package/@llm-optimize/core)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![build](https://github.com/your-org/llm-optimize/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/llm-optimize/actions)
 
-## What this project does
+---
 
-`LLMOptimizer` sits in front of your provider call and can automatically:
+## What is llm-optimize?
 
-- optimize prompts
-- clean conversation context
-- cache responses
-- route to a model
-- retry failed requests
-- redact sensitive data
-- validate JSON output
-- collect analytics
+`llm-optimize` sits between your app and any LLM provider. Instead of calling OpenAI or Anthropic directly, you call `LLMOptimizer.chat()` and get automatic:
 
-## Repository layout
+- **Token savings** — deduplicates messages, compresses whitespace, trims history to a token budget
+- **Cost reduction** — caches identical responses so you never pay for the same request twice
+- **Security** — redacts API keys, JWTs, credit cards, emails, and phone numbers before they reach the model
+- **Reliability** — retries rate limits and server errors with exponential backoff
+- **Observability** — tracks tokens, cost, latency, cache hit rate, and compression ratio per request
+- **Flexibility** — swap providers, add model routing, or extend with custom plugins
 
-- `packages/core` - main public API and middleware pipeline
-- `packages/openai` - OpenAI provider adapter
-- `packages/anthropic` - Anthropic provider adapter
-- `packages/gemini` - Gemini provider adapter
-- `packages/ollama` - Ollama provider adapter
-- `packages/cache-memory` - in-memory cache adapter
-- `packages/cache-redis` - Redis cache adapter
-- `packages/cli` - CLI for prompt analysis and linting
-- `packages/plugin-sdk` - plugin development surface
-- `packages/examples` - example usage
-- `docs` - documentation files
+---
 
-## Install
-
-```bash
-npm install
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Test
-
-```bash
-npm run test
-```
-
-## Typecheck
-
-```bash
-npm run typecheck
-```
-
-## Package Guide
-
-Use the sections below to pick the right package for your app.
-
-### `@llm-optimize/core`
-
-Use this when you want the optimization middleware and the main `LLMOptimizer` API.
-
-Install:
+## Quick Start
 
 ```bash
 npm install @llm-optimize/core
 ```
-
-Example:
 
 ```ts
 import { LLMOptimizer } from "@llm-optimize/core";
@@ -77,351 +33,279 @@ import { LLMOptimizer } from "@llm-optimize/core";
 const ai = new LLMOptimizer({
   provider: "openai",
   optimize: true,
+  redactSensitiveData: true,
+  retry: { retries: 2 },
   providerClientFactory: {
-    create: async () => ({
-      chat: async (request) => {
-        return {
-          model: request.model,
-          content: "Hello from core",
-        };
-      },
-    }),
+    create: () => myOpenAIClient,
   },
 });
 
 const response = await ai.chat({
-  model: "gpt-5",
-  messages: [{ role: "user", content: "Summarize this repo." }],
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Summarize this document." }],
 });
+
+console.log(response.content);
+console.log(response.usage);     // { inputTokens, outputTokens, totalTokens }
+console.log(ai.analytics);       // { requests, cacheHits, tokenSavings, estimatedCostUsd, ... }
 ```
 
-### `@llm-optimize/openai`
+---
 
-Use this when you want an OpenAI provider adapter.
+## How a Request Flows Through the Pipeline
 
-Install:
-
-```bash
-npm install @llm-optimize/openai
+```
+Your App
+  └── LLMOptimizer.chat()
+        1. Redact sensitive data (API keys, emails, credit cards, JWTs, phone numbers)
+        2. Deduplicate repeated messages
+        3. Trim history to token budget (keeps system messages)
+        4. Normalize whitespace in all messages
+        5. Check response cache → return instantly if hit
+        6. Route to model (optional custom router)
+        7. Call provider with retry + timeout
+        8. Parse / repair JSON response (if responseFormat: "json")
+        9. Store in cache
+       10. Record analytics
+  └── ProviderChatResponse { content, usage, parsed }
 ```
 
-Example:
+---
 
+## Packages
+
+| Package | Purpose | Install |
+|---|---|---|
+| [`@llm-optimize/core`](./packages/core) | Main API, middleware pipeline, all built-in features | `npm i @llm-optimize/core` |
+| [`@llm-optimize/anthropic`](./packages/anthropic) | Anthropic Claude adapter (direct API + AWS Bedrock) | `npm i @llm-optimize/anthropic` |
+| [`@llm-optimize/openai`](./packages/openai) | OpenAI adapter (also works with Azure, Groq, Together) | `npm i @llm-optimize/openai` |
+| [`@llm-optimize/gemini`](./packages/gemini) | Google Gemini adapter | `npm i @llm-optimize/gemini` |
+| [`@llm-optimize/ollama`](./packages/ollama) | Local Ollama adapter (offline / self-hosted models) | `npm i @llm-optimize/ollama` |
+| [`@llm-optimize/cache-memory`](./packages/cache-memory) | In-process cache for dev and single-instance apps | `npm i @llm-optimize/cache-memory` |
+| [`@llm-optimize/cache-redis`](./packages/cache-redis) | Redis cache for multi-instance / production apps | `npm i @llm-optimize/cache-redis` |
+| [`@llm-optimize/cli`](./packages/cli) | CLI for prompt analysis, linting, and benchmarking | `npm i @llm-optimize/cli` |
+| [`@llm-optimize/plugin-sdk`](./packages/plugin-sdk) | Types and utilities for building custom plugins | `npm i @llm-optimize/plugin-sdk` |
+
+---
+
+## Common Setups
+
+**Minimal — OpenAI with optimization:**
 ```ts
+import { LLMOptimizer } from "@llm-optimize/core";
 import { createOpenAIProviderClient } from "@llm-optimize/openai";
 
-const client = createOpenAIProviderClient({
-  apiKey: process.env.OPENAI_API_KEY,
+const ai = new LLMOptimizer({
+  provider: "openai",
+  providerClientFactory: { create: () => createOpenAIProviderClient({ apiKey: process.env.OPENAI_API_KEY }) },
 });
 ```
 
-### `@llm-optimize/anthropic`
-
-Use this when you want an Anthropic provider adapter.
-
-Install:
-
-```bash
-npm install @llm-optimize/anthropic
-```
-
-Example:
-
+**Production — Anthropic + Redis cache + model routing:**
 ```ts
+import { LLMOptimizer } from "@llm-optimize/core";
 import { createAnthropicProviderClient } from "@llm-optimize/anthropic";
-
-const client = createAnthropicProviderClient({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-```
-
-### `@llm-optimize/gemini`
-
-Use this when you want a Gemini provider adapter.
-
-Install:
-
-```bash
-npm install @llm-optimize/gemini
-```
-
-Example:
-
-```ts
-import { createGeminiProviderClient } from "@llm-optimize/gemini";
-
-const client = createGeminiProviderClient({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-```
-
-### `@llm-optimize/ollama`
-
-Use this when you want to connect to a local Ollama server.
-
-Install:
-
-```bash
-npm install @llm-optimize/ollama
-```
-
-Example:
-
-```ts
-import { createOllamaProviderClient } from "@llm-optimize/ollama";
-
-const client = createOllamaProviderClient({
-  baseUrl: "http://localhost:11434",
-});
-```
-
-### `@llm-optimize/cache-memory`
-
-Use this for in-process caching during development or for single-instance deployments.
-
-Install:
-
-```bash
-npm install @llm-optimize/cache-memory
-```
-
-Example:
-
-```ts
-import { MemoryCache } from "@llm-optimize/cache-memory";
-
-const cache = new MemoryCache();
-```
-
-### `@llm-optimize/cache-redis`
-
-Use this when you need shared caching across multiple app instances.
-
-Install:
-
-```bash
-npm install @llm-optimize/cache-redis
-```
-
-Example:
-
-```ts
 import { RedisCache } from "@llm-optimize/cache-redis";
 
-const cache = new RedisCache(redisClient);
+const ai = new LLMOptimizer({
+  provider: "anthropic",
+  cache: new RedisCache(redisClient),
+  modelRouter: {
+    route({ estimatedInputTokens }) {
+      return estimatedInputTokens > 2000
+        ? "claude-3-5-sonnet-20241022"
+        : "claude-3-haiku-20240307";
+    },
+  },
+  providerClientFactory: { create: () => createAnthropicProviderClient({ apiKey: process.env.ANTHROPIC_API_KEY }) },
+});
 ```
 
-### `@llm-optimize/cli`
+**AWS Bedrock — Claude via Bedrock runtime:**
+```ts
+import { LLMOptimizer } from "@llm-optimize/core";
+import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 
-Use this for prompt analysis, linting, and benchmark commands.
+const bedrock = new BedrockRuntimeClient({ region: "us-east-1" });
 
-Install:
-
-```bash
-npm install @llm-optimize/cli
+const ai = new LLMOptimizer({
+  provider: "anthropic-bedrock",
+  providerClientFactory: {
+    create: () => ({
+      chat: async (request) => {
+        const cmd = new InvokeModelCommand({
+          modelId: request.model,
+          contentType: "application/json",
+          accept: "application/json",
+          body: JSON.stringify({
+            anthropic_version: "bedrock-2023-05-31",
+            max_tokens: 1024,
+            messages: request.messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role, content: m.content })),
+            system: request.messages.find((m) => m.role === "system")?.content,
+          }),
+        });
+        const res = await bedrock.send(cmd);
+        const data = JSON.parse(new TextDecoder().decode(res.body));
+        return { model: request.model, content: data.content.map((p) => p.text).join(""), usage: { inputTokens: data.usage.input_tokens, outputTokens: data.usage.output_tokens, totalTokens: data.usage.input_tokens + data.usage.output_tokens } };
+      },
+    }),
+  },
+});
 ```
 
-Examples:
+**Local dev — Ollama with memory cache:**
+```ts
+import { LLMOptimizer } from "@llm-optimize/core";
+import { createOllamaProviderClient } from "@llm-optimize/ollama";
+import { MemoryCache } from "@llm-optimize/cache-memory";
 
-```bash
-npx llm-opt analyze prompt.md
-npx llm-opt lint prompts/
-npx llm-opt benchmark
+const ai = new LLMOptimizer({
+  provider: "ollama",
+  cache: new MemoryCache({ maxSize: 200 }),
+  providerClientFactory: { create: () => createOllamaProviderClient({ baseUrl: "http://localhost:11434" }) },
+});
 ```
 
-### `@llm-optimize/plugin-sdk`
+---
 
-Use this when you want to build custom plugins against the optimizer runtime.
+## Features In Detail
 
-Install:
+### Sensitive Data Redaction
 
-```bash
-npm install @llm-optimize/plugin-sdk
-```
+Automatically masks before every request — no code changes needed:
 
-Example:
+| Pattern | Example Input | Sent to Model |
+|---|---|---|
+| OpenAI API key | `sk-abc123...` | `[REDACTED_API_KEY]` |
+| AWS access key | `AKIA4GLM7RMS...` | `[REDACTED_AWS_KEY]` |
+| JWT token | `eyJhbGci...` | `[REDACTED_JWT]` |
+| Credit card | `4111 1111 1111 1111` | `[REDACTED_CREDIT_CARD]` |
+| Email address | `user@example.com` | `[REDACTED_EMAIL]` |
+| Phone number | `+1-800-555-0100` | `[REDACTED_PHONE]` |
+
+### Token Budget & Context Trimming
 
 ```ts
-import type { OptimizerPlugin } from "@llm-optimize/plugin-sdk";
-
-export const myPlugin: OptimizerPlugin = {
-  name: "my-plugin",
-  init(runtime) {
-    runtime.registerMiddleware(async (context, next) => {
-      await next();
-    });
-  },
-};
+const ai = new LLMOptimizer({ tokenBudget: 4000 }); // trim history beyond 4000 tokens
 ```
 
-### `packages/examples`
+Older messages are dropped when history grows too large. System messages are always preserved.
 
-Use this folder as a quick reference for a minimal working example.
+### Response Caching
 
-## Request Lifecycle
+```ts
+const ai = new LLMOptimizer({ cache: new MemoryCache() });
+// Second identical request returns instantly, costs $0
+```
 
-The intended pipeline is:
+### Model Routing
 
-1. Request enters `LLMOptimizer`
-2. Context optimizer removes duplicate or irrelevant history
-3. Prompt optimizer normalizes and compresses prompt text
-4. Prompt cache checks whether an optimization result already exists
-5. Response cache checks whether the full response is already available
-6. Model router can override or refine the target model
-7. Provider client executes the LLM request
-8. Response validator parses or repairs JSON if requested
-9. Analytics record tokens, cost, latency, savings, and cache hit rate
-10. Optimized response is returned to the caller
+```ts
+modelRouter: {
+  route({ estimatedInputTokens }) {
+    if (estimatedInputTokens < 500) return "claude-3-haiku-20240307";   // cheap
+    if (estimatedInputTokens < 3000) return "claude-3-5-sonnet-20241022"; // balanced
+    return "claude-3-5-opus-20241022";                                    // powerful
+  }
+}
+```
 
-## Features
+### Retry with Exponential Backoff
 
-### Prompt optimization
-
-- removes duplicate instructions
-- removes duplicate examples
-- merges repeated system prompts
-- compresses whitespace
-- preserves meaning as much as possible
-- estimates token savings
-
-### Context optimization
-
-- removes duplicated conversation history
-- trims older or irrelevant messages
-- supports token budget limits
-- can be extended to add summarization
-
-### Caching
-
-- memory cache
-- Redis cache
-- configurable TTL
-- request-based cache keys
-
-### Token analysis
-
-- estimated input tokens before a request
-- estimated output tokens after a response
-- estimated cost
-- savings and compression ratio
-
-### Routing
-
-- custom model routing rules
-- support for user overrides
-- useful for choosing smaller models for simple tasks
-
-### Retry
-
-- retries 429, 500, and timeout-style failures
-- exponential backoff
-- configurable retry limits
-
-### Response validation
-
-- JSON parsing support
-- best-effort repair for invalid JSON responses
-
-### Security
-
-- redacts:
-  - passwords
-  - API keys
-  - JWTs
-  - credit cards
-  - email addresses
-  - phone numbers
+```ts
+retry: { retries: 3, baseDelayMs: 200, maxDelayMs: 5000, timeoutMs: 30000 }
+// retries on 429, 500, and timeout errors automatically
+```
 
 ### Analytics
 
-- request count
-- token usage
-- estimated cost
-- latency
-- cache hit rate
-- compression ratio
-- savings
+```ts
+const stats = ai.analytics;
+// {
+//   requests: 42,
+//   cacheHits: 18,
+//   inputTokens: 12400,
+//   outputTokens: 8200,
+//   tokenSavings: 1340,
+//   estimatedCostUsd: 0.0087,
+//   averageLatencyMs: 1240,
+//   averageCompressionRatio: 0.89
+// }
+```
+
+### JSON Response Validation
+
+```ts
+const response = await ai.chat({
+  model: "gpt-4o",
+  responseFormat: "json",
+  messages: [{ role: "user", content: "Return a JSON object with name and age." }],
+});
+
+console.log(response.parsed); // already parsed — no JSON.parse() needed
+```
+
+---
 
 ## CLI
 
-See the `@llm-optimize/cli` package guide above for usage examples.
+```bash
+# Analyze a single prompt file
+npx llm-opt analyze prompt.md
 
-## Integrating In An App
+# Lint all prompt files in a folder
+npx llm-opt lint prompts/
 
-The most common setup is:
+# Benchmark token savings across a folder
+npx llm-opt benchmark prompts/
+```
 
-1. install `@llm-optimize/core`
-2. install exactly one provider adapter, such as `@llm-optimize/openai`
-3. optionally install a cache package
-4. create `LLMOptimizer`
-5. call `chat()` instead of calling the provider directly
+---
 
-If you want caching, routing, or plugins, add those packages or options as needed.
+## Repository Layout
 
-## GitHub Actions
+```
+packages/
+  core/          Main API and middleware pipeline
+  anthropic/     Anthropic Claude adapter
+  openai/        OpenAI adapter
+  gemini/        Google Gemini adapter
+  ollama/        Local Ollama adapter
+  cache-memory/  In-process cache
+  cache-redis/   Redis cache
+  cli/           CLI tools
+  plugin-sdk/    Plugin development types
+docs/            Documentation
+```
 
-If you pushed this repo and saw build jobs start automatically, that is expected.
+---
 
-The workflow lives in:
+## Development
 
-- [.github/workflows/ci.yml](/home/administrator/learn/LLMOptimizer/.github/workflows/ci.yml)
+```bash
+# Install all workspace dependencies
+npm install
 
-It is configured with:
+# Build all packages
+npm run build
 
-- `on: push`
-- `on: pull_request`
+# Run all tests
+npm run test
 
-That means GitHub runs the workflow automatically whenever:
+# Typecheck all packages
+npm run typecheck
+```
 
-- you push code to the repository
-- you open or update a pull request
+Node.js 20.19+ or 22.13+ recommended. Uses npm workspaces + TurboRepo.
 
-The job currently does:
+---
 
-1. checks out the code
-2. sets up Node.js 20
-3. runs `npm install`
-4. runs `npm run build`
-5. runs `npm run test`
+## Keywords
 
-So the build trigger is not coming from your local machine. It is coming from the workflow definition committed in the repo.
+llm optimization, token reduction, prompt compression, llm cost savings, openai middleware, anthropic middleware, aws bedrock, gemini adapter, ollama local llm, llm caching, redis llm cache, sensitive data redaction, llm security, prompt linting, token budget, model routing, llm retry, llm analytics, typescript llm, llm middleware, ai cost optimization, llm proxy
 
-## Current status
-
-The repo is scaffolded and typechecks/tests pass, but some parts are still intentionally minimal:
-
-- provider auto-wiring is not fully automatic yet
-- plugin ecosystem integrations are not fully implemented
-- docs are still being expanded
-
-## Development notes
-
-- Node.js 20.19+ or 22.13+ is recommended
-- npm workspaces are enabled
-- TurboRepo runs the package scripts in order
+---
 
 ## License
 
-Add your project license here before publishing publicly.
-
-## npm Publishing Status
-
-The packages are prepared for npm publishing with:
-
-- package names like `@llm-optimize/core`
-- `dist/` build output
-- `exports`, `main`, and `types`
-- `files` lists for published artifacts
-- `publishConfig.access = public`
-- package-level version fields
-
-This means you can publish each package after building it.
-
-Example flow:
-
-```bash
-npm run build
-npm publish --workspace @llm-optimize/core --access public
-```
-
-For a full automated release pipeline across all workspaces, the repo still needs a package-aware release tool such as Changesets or a custom publish script per package. I have not hard-wired that yet because multi-package release automation should match your publishing strategy.
+MIT
