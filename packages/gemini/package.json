@@ -4,11 +4,19 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
     "gemini",
-    "provider",
-    "adapter",
-    "google"
+    "google-gemini",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash",
+    "gemini-2.0",
+    "google-ai",
+    "generative-language-api",
+    "google-generative-ai",
+    "llm-provider",
+    "llm-adapter",
+    "llm-middleware",
+    "ai-typescript",
+    "typescript"
   ],
   "files": [
     "dist",

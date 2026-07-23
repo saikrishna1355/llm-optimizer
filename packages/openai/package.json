@@ -4,11 +4,22 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
     "openai",
-    "provider",
-    "adapter",
-    "chat"
+    "gpt-4",
+    "gpt-4o",
+    "gpt-3.5-turbo",
+    "openai-api",
+    "openai-typescript",
+    "chat-completions",
+    "azure-openai",
+    "groq",
+    "together-ai",
+    "openai-compatible",
+    "llm-provider",
+    "llm-adapter",
+    "llm-middleware",
+    "ai-typescript",
+    "typescript"
   ],
   "files": [
     "dist",

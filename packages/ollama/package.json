@@ -4,11 +4,23 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
     "ollama",
-    "local",
-    "provider",
-    "adapter"
+    "local-llm",
+    "offline-llm",
+    "self-hosted-llm",
+    "llama3",
+    "mistral",
+    "gemma",
+    "phi",
+    "codellama",
+    "open-source-llm",
+    "private-llm",
+    "on-premise-ai",
+    "llm-provider",
+    "llm-adapter",
+    "llm-middleware",
+    "no-api-key",
+    "typescript"
   ],
   "files": [
     "dist",

@@ -75,8 +75,3 @@ messages: [
 - `GeminiClient` interface — implement this to bring your own HTTP client
 - `GeminiProviderOptions` — `{ apiKey?, baseUrl? }`
 
----
-
-## Keywords
-
-google gemini adapter, gemini api typescript, gemini 1.5 pro client, gemini 1.5 flash, gemini 2.0, google ai typescript, llm provider adapter, generative language api, gemini system instruction, google generative ai sdk alternative

@@ -4,11 +4,22 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
     "anthropic",
-    "provider",
-    "adapter",
-    "messages"
+    "claude",
+    "claude-3",
+    "claude-3-haiku",
+    "claude-3-sonnet",
+    "claude-3-opus",
+    "anthropic-api",
+    "anthropic-typescript",
+    "aws-bedrock",
+    "bedrock-claude",
+    "llm-provider",
+    "llm-adapter",
+    "llm-middleware",
+    "openai-alternative",
+    "ai-typescript",
+    "typescript"
   ],
   "files": [
     "dist",

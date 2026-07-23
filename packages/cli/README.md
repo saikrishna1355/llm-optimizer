@@ -102,8 +102,3 @@ Add to your CI pipeline to catch prompt quality regressions:
   run: npx llm-opt lint prompts/ | jq '.[] | select(.score < 80)'
 ```
 
----
-
-## Keywords
-
-llm prompt linting, prompt quality analysis, token count cli, prompt optimization tool, llm prompt analyzer, token estimation cli, prompt benchmark, ai prompt quality score, llm cost analysis cli, prompt file linter

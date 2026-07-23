@@ -116,8 +116,3 @@ const response = await ai.chat({
 - `AnthropicClient` interface — implement this to bring your own HTTP client
 - `AnthropicProviderOptions` — `{ apiKey?, baseUrl? }`
 
----
-
-## Keywords
-
-anthropic claude adapter, claude api typescript, anthropic llm client, aws bedrock claude, claude 3 haiku, claude 3 sonnet, claude 3 opus, anthropic messages api, llm provider adapter, openai alternative, claude typescript sdk

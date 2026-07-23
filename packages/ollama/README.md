@@ -88,8 +88,3 @@ const ai = new LLMOptimizer({
 - `OllamaClient` interface — implement this to bring your own HTTP client
 - `OllamaProviderOptions` — `{ baseUrl? }`
 
----
-
-## Keywords
-
-ollama typescript client, local llm typescript, llama3 api client, mistral local api, offline llm, self-hosted llm, open source llm adapter, ollama api wrapper, local ai development, llm without api key, private llm, on-premise llm

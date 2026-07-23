@@ -89,8 +89,3 @@ const client = createOpenAIProviderClient({
 - `OpenAIClient` interface — implement this to bring your own HTTP client
 - `OpenAIProviderOptions` — `{ apiKey?, baseUrl? }`
 
----
-
-## Keywords
-
-openai typescript adapter, gpt-4o client, openai chat completions, azure openai adapter, groq api client, together ai, openai compatible api, llm provider adapter, gpt typescript sdk, openai middleware, token usage tracking

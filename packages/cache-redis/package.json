@@ -4,11 +4,20 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
-    "cache",
-    "redis",
-    "ttl",
-    "optimizer"
+    "redis-llm-cache",
+    "llm-response-cache",
+    "shared-llm-cache",
+    "openai-redis-cache",
+    "anthropic-redis-cache",
+    "prompt-cache-redis",
+    "distributed-ai-cache",
+    "ai-cost-reduction",
+    "token-savings",
+    "ioredis",
+    "node-redis",
+    "serverless-llm-cache",
+    "multi-instance-cache",
+    "typescript"
   ],
   "files": [
     "dist",

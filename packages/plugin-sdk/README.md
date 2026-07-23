@@ -120,8 +120,3 @@ const ai = new LLMOptimizer({
 | `PluginRegistry` | Runtime implementation (re-exported from core) |
 | `activatePlugins` | Utility to initialize plugins (re-exported from core) |
 
----
-
-## Keywords
-
-llm plugin sdk, llm middleware typescript, custom llm plugin, openai middleware plugin, llm analytics plugin, llm request interceptor, llm response interceptor, ai plugin system, llm extensibility, custom model router plugin, llm observability plugin

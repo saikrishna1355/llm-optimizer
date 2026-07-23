@@ -4,11 +4,17 @@
   "license": "MIT",
   "type": "module",
   "keywords": [
-    "llm",
-    "plugin",
-    "sdk",
-    "middleware",
-    "optimizer"
+    "llm-plugin",
+    "llm-plugin-sdk",
+    "llm-middleware",
+    "llm-extensibility",
+    "custom-llm-plugin",
+    "llm-request-interceptor",
+    "llm-analytics-plugin",
+    "llm-observability",
+    "model-router-plugin",
+    "ai-plugin-system",
+    "typescript"
   ],
   "files": [
     "dist",

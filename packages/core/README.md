@@ -193,8 +193,3 @@ const loggingPlugin: OptimizerPlugin = {
 const ai = new LLMOptimizer({ plugins: [loggingPlugin], ... });
 ```
 
----
-
-## Keywords
-
-llm optimization, token reduction, prompt compression, openai middleware, anthropic middleware, llm cost savings, sensitive data redaction, llm caching, model routing, llm retry, llm analytics, typescript llm, ai middleware, llm proxy, token budget, context trimming, json repair, llm security

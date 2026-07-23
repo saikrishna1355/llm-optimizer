@@ -71,8 +71,3 @@ cache.delete("my-key");
 | Multiple servers / horizontal scaling | ❌ Use `@llm-optimize/cache-redis` instead |
 | Serverless functions | ❌ Cache resets on cold start — use Redis |
 
----
-
-## Keywords
-
-llm response cache, in-memory cache typescript, openai response caching, llm cost reduction, token savings cache, lru cache llm, ttl cache typescript, ai response cache, prompt cache, llm deduplication

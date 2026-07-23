@@ -79,8 +79,3 @@ await cache.delete("my-key");
 | High-traffic production | ✅ RedisCache |
 | Local dev / single server | Use `@llm-optimize/cache-memory` instead |
 
----
-
-## Keywords
-
-redis llm cache, shared llm response cache, openai redis cache, anthropic response caching, llm cost reduction, multi-instance llm cache, ioredis typescript, node-redis typescript, serverless llm cache, distributed ai cache, prompt caching redis
